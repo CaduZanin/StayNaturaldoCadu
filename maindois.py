@@ -261,8 +261,8 @@ def jogar():
         tela.blit(texto_pause_info, (20, 660))
 
         # Colisão
-        if (abs(posicaoXPersona - posicaoXtrembo) < 100 and 
-            abs(posicaoYPersona - posicaoYtrembo) < 100):
+        if (abs(posicaoXPersona - posicaoXtrembo) < 124 and 
+            abs(posicaoYPersona - posicaoYtrembo) < 124):
             data_hora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             escreverDados(nome, pontos, data_hora)  # Item 15
             dead()
