@@ -12,10 +12,11 @@ inicializarBancoDeDados()
 tamanho = (1000,700)
 relogio = pygame.time.Clock()
 tela = pygame.display.set_mode( tamanho ) 
-pygame.display.set_caption("Freaky Season do Cadu")
+pygame.display.set_caption("Stay Natural do Cadu")
 icone = pygame.image.load("recursos/imagens/icone.webp")
 pygame.display.set_icon(icone)
 branco = (255,255,255)
+azul_claro = (0,200,255)
 preto = (0, 0 ,0 )
 natural = pygame.image.load("recursos/imagens/natural.png")
 fundostart = pygame.image.load("recursos/imagens/academiastart.webp")
@@ -23,23 +24,19 @@ fundoJogo = pygame.image.load("recursos/imagens/atgym.jpg")
 fundoDead = pygame.image.load("recursos/imagens/fundohospital.png")
 trembo = pygame.image.load("recursos/imagens/trembo.png")
 seringa = pygame.image.load("recursos/imagens/seringa.png")
-enemysound = pygame.mixer.Sound("recursos/audios/audiocontra.mp3")
+trembosound = pygame.mixer.Sound("recursos/audios/audiocontra.mp3")
 mortesound = pygame.mixer.Sound("recursos/audios/quandomorre.mp3")
 fonteMenu = pygame.font.SysFont("comicsans",18)
 fonteMorte = pygame.font.SysFont("arial",120)
 pygame.mixer.music.load("recursos/audios/fundogame.mp3")
 
-nova_largura = fundostart.get_width() 
-nova_altura = fundostart.get_height() 
-fundostart = pygame.transform.scale(fundostart, (1000, 700)) #125x83 px
 
-nova_largura = trembo.get_width() // 2
-nova_altura = trembo.get_height() // 2
-trembo = pygame.transform.scale(trembo, (nova_largura, nova_altura)) #125x125 px
-
-
-
-
+fundostart = pygame.transform.scale(fundostart, (1000, 700)) 
+trembo = pygame.transform.scale(trembo, (140,140)) 
+natural = pygame.transform.scale(natural, (200,200))
+fundoJogo = pygame.transform.scale(fundoJogo, (1000,700))
+fundoDead = pygame.transform.scale(fundoDead, (1000, 700))
+esperando_inicio = True
 def jogar():
     largura_janela = 300
     altura_janela = 50
@@ -51,7 +48,6 @@ def jogar():
         else:
             #print(f'Nome digitado: {nome}')  # Exibe o nome no console
             root.destroy()  # Fecha a janela após a entrada válida
-
     # Criação da janela principal
     root = tk.Tk()
     # Obter as dimensões da tela
@@ -82,13 +78,13 @@ def jogar():
     posicaoXtrembo = 400
     posicaoYtrembo = -240
     velocidadetrembo = 1
-    pygame.mixer.Sound.play(enemysound)
+    pygame.mixer.Sound.play(trembosound)
     pygame.mixer.music.play(-1)
     pontos = 0
-    larguraPersona = 125
-    alturaPersona = 83
-    larguratrembo  = 50
-    alturatrembo  = 250
+    larguraPersona = 200
+    alturaPersona = 200
+    larguratrembo  = 140
+    alturatrembo  = 140
     dificuldade  = 30
     while True:
         for evento in pygame.event.get():
@@ -106,9 +102,9 @@ def jogar():
         posicaoXPersona = posicaoXPersona + movimentoXPersona                    
         
         if posicaoXPersona < 0 :
-            posicaoXPersona = 15
-        elif posicaoXPersona >550:
-            posicaoXPersona = 540
+            posicaoXPersona = 0
+        elif posicaoXPersona >800:
+            posicaoXPersona = 800
         
             
         tela.fill(branco)
@@ -117,12 +113,12 @@ def jogar():
         tela.blit( natural, (posicaoXPersona, posicaoYPersona) )
         
         posicaoYtrembo = posicaoYtrembo + velocidadetrembo
-        if posicaoYtrembo > 600:
-            posicaoYtrembo = -240
+        if posicaoYtrembo > 700:
+            posicaoYtrembo = -140
             pontos = pontos + 1
             velocidadetrembo = velocidadetrembo + 1
-            posicaoXtrembo = random.randint(0,800)
-            pygame.mixer.Sound.play(enemysound)
+            posicaoXtrembo = random.randint(0,1000)
+            pygame.mixer.Sound.play(trembosound)
             
             
         tela.blit( trembo, (posicaoXtrembo, posicaoYtrembo) )
@@ -148,13 +144,13 @@ def jogar():
             print("Ainda Vivo")
         
         pygame.display.update()
-        relogio.tick(60)
+        relogio.tick(120)
 
 
 def start():
-    larguraButtonStart = 150
+    larguraButtonStart = 165
     alturaButtonStart  = 40
-    larguraButtonQuit = 150
+    larguraButtonQuit = 165
     alturaButtonQuit  = 40
     
 
@@ -164,10 +160,10 @@ def start():
                 quit()
             elif evento.type == pygame.MOUSEBUTTONDOWN:
                 if startButton.collidepoint(evento.pos):
-                    larguraButtonStart = 140
+                    larguraButtonStart = 165
                     alturaButtonStart  = 35
                 if quitButton.collidepoint(evento.pos):
-                    larguraButtonQuit = 140
+                    larguraButtonQuit = 165
                     alturaButtonQuit  = 35
 
                 
@@ -175,12 +171,12 @@ def start():
                 # Verifica se o clique foi dentro do retângulo
                 if startButton.collidepoint(evento.pos):
                     #pygame.mixer.music.play(-1)
-                    larguraButtonStart = 150
+                    larguraButtonStart = 165
                     alturaButtonStart  = 40
                     jogar()
                 if quitButton.collidepoint(evento.pos):
                     #pygame.mixer.music.play(-1)
-                    larguraButtonQuit = 150
+                    larguraButtonQuit = 165
                     alturaButtonQuit  = 40
                     quit()
                     
@@ -189,12 +185,12 @@ def start():
         tela.fill(branco)
         tela.blit(fundostart, (0,0) )
 
-        startButton = pygame.draw.rect(tela, branco, (10,10, larguraButtonStart, alturaButtonStart), border_radius=15)
-        startTexto = fonteMenu.render("Iniciar Game", True, preto)
+        startButton = pygame.draw.rect(tela, azul_claro, (10,10, larguraButtonStart, alturaButtonStart), border_radius=15)
+        startTexto = fonteMenu.render("Matricular-se", True, preto)
         tela.blit(startTexto, (25,12))
         
-        quitButton = pygame.draw.rect(tela, branco, (10,60, larguraButtonQuit, alturaButtonQuit), border_radius=15)
-        quitTexto = fonteMenu.render("Sair do Game", True, preto)
+        quitButton = pygame.draw.rect(tela, azul_claro, (10,60, larguraButtonQuit, alturaButtonQuit), border_radius=15)
+        quitTexto = fonteMenu.render("Continuar Frango", True, preto)
         tela.blit(quitTexto, (25,62))
         
         pygame.display.update()
@@ -204,9 +200,9 @@ def start():
 def dead():
     pygame.mixer.music.stop()
     pygame.mixer.Sound.play(mortesound)
-    larguraButtonStart = 150
+    larguraButtonStart = 165
     alturaButtonStart  = 40
-    larguraButtonQuit = 150
+    larguraButtonQuit = 165
     alturaButtonQuit  = 40
     
     
@@ -222,7 +218,7 @@ def dead():
     listbox.pack(pady=20)
 
     # Adiciona o log das partidas no Listbox
-    log_partidas = open("base.atitus", "r").read()
+    log_partidas = open("base.cadu", "r").read()
     log_partidas = json.loads(log_partidas)
     for chave in log_partidas:
         listbox.insert(tk.END, f"Pontos: {log_partidas[chave][0]} na data: {log_partidas[chave][1]} - Nickname: {chave}")  # Adiciona cada linha no Listbox
@@ -272,7 +268,30 @@ def dead():
 
         pygame.display.update()
         relogio.tick(60)
+def tela_boas_vindas(nome):
+            esperando_inicio = True
+            while esperando_inicio:
+                for evento in pygame.event.get():
+                    if evento.type == pygame.QUIT:
+                        pygame.quit()
+                        quit()
+                    if evento.type == pygame.MOUSEBUTTONDOWN:
+                        if botao_iniciar.collidepoint(evento.pos):
+                            esperando_inicio = False
 
-
+                tela.fill(preto)
+                tela.blit(fundostart, (0, 0))  # Ou um fundo específico para essa tela
+                
+                # Mensagem de boas-vindas
+                texto_boas_vindas = fonteMenu.render(f"Bem-vindo, {nome}!", True, branco)
+                texto_instrucao = fonteMenu.render("Evite as trembolonas usando as setas!", True, branco)
+                tela.blit(texto_boas_vindas, (300, 200))
+                tela.blit(texto_instrucao, (250, 250))
+                
+                # Botão "Iniciar"
+                botao_iniciar = pygame.draw.rect(tela, azul_claro, (400, 350, 200, 50), border_radius=10)
+                texto_botao = fonteMenu.render("INICIAR", True, preto)
+                tela.blit(texto_botao, (460, 360))
+                pygame.display.update()
+                relogio.tick(60)
 start()
-
