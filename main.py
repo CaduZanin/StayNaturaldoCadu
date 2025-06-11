@@ -30,7 +30,7 @@ vermelho = (255,0,0)
 natural = pygame.image.load("recursos/imagens/natural.png")
 fundostart = pygame.image.load("recursos/imagens/academiastart.webp")
 fundoJogo = pygame.image.load("recursos/imagens/atgym.jpg")
-fundoDead = pygame.image.load("recursos/imagens/fundohospital.png")
+fundoDead = pygame.image.load("recursos/imagens/hospital.jpg")
 trembo = pygame.image.load("recursos/imagens/trembo.png")
 fundorecepcao = pygame.image.load("recursos/imagens/fundorecepcao.jpg")
 ramonrandom = pygame.image.load("recursos/imagens/ramonrandom.png")  # Novo asset (item 14)
@@ -50,6 +50,8 @@ global direcao_animacao
 direcao_animacao = "aumentando"
 global contador_animacao
 contador_animacao = 0
+global falou_nome
+falou_nome = False
 
 #fontes
 fonteMenu = pygame.font.SysFont("comicsans",18)
@@ -68,6 +70,8 @@ fundoDead = pygame.transform.scale(fundoDead, tamanho)
 ramonrandom = pygame.transform.scale(ramonrandom, (150, 100))  # Item 14
 fundorecepcao = pygame.transform.scale(fundorecepcao, (1000,700))
 halter = pygame.transform.scale(halter, (130,130))
+fundoDead = pygame.transform.scale(fundoDead, (1000, 700))
+
 #função telas boas vindas
 def tela_boas_vindas(nome_jogador):
     esperando_inicio = True
@@ -126,6 +130,14 @@ def tela_boas_vindas(nome_jogador):
         pygame.display.update()
         relogio.tick(60)
 
+        global falou_nome
+        if not falou_nome:
+            falou_nome = True
+            engine = pyttsx3.init()
+            texto = f"Bem vindo, {nome_jogador}!"
+            engine.say(texto)
+
+            engine.runAndWait()
 #função Jogar
 def jogar():
     def obter_nome():
@@ -278,8 +290,11 @@ def dead():
     try:
         with open("log.dat", "r") as f:
             registros = json.load(f)
-        ultimos_5 = sorted(registros.items(), key=lambda x: x[1][0], reverse=True)[:5]
-    except:
+        # Converte para lista e ordena por pontos (decrescente)
+        registros_lista = sorted(registros.items(), key=lambda item: item[1][0], reverse=True)
+        ultimos_5 = registros_lista[:5]
+    except Exception as e:
+        print(f"Erro ao carregar registros: {e}")
         ultimos_5 = []
 
     esperando = True
@@ -307,31 +322,41 @@ def dead():
         
         # Título GAME OVER
         texto_morte = fonteMorte.render("GAME OVER", True, (255, 0, 0))
-        tela.blit(texto_morte, (200, 30))
+        tela.blit(texto_morte, (tamanho[0]//2 - texto_morte.get_width()//2, 30))
         
         # Subtítulo "Últimos Pacientes"
         texto_subtitulo = fontedead.render("Últimos Pacientes:", True, branco)
-        tela.blit(texto_subtitulo, (200, 150))
+        tela.blit(texto_subtitulo, (tamanho[0]//2 - texto_subtitulo.get_width()//2, 150))
         
-        # Lista de pacientes
+        # Lista de pacientes (ou mensagem se não houver registros)
         y = 200
-        for i, (nome_reg, (pontos_reg, data_reg)) in enumerate(ultimos_5):
-            data_obj = datetime.datetime.strptime(data_reg, "%d/%m/%Y %H:%M:%S")
-            data_formatada = data_obj.strftime("%d/%m/%Y")
-            hora_formatada = data_obj.strftime("%H:%M:%S")
-            
-            texto_paciente = fonteRanking.render(
-                f"Paciente: {nome_reg} - {pontos_reg} pts - {data_formatada}", 
-                True, branco
-            )
-            tela.blit(texto_paciente, (200, y))
-            
-            texto_horario_motivo = fonteRanking.render(
-                f"Horário: {hora_formatada} - Motivo: overdose", 
-                True, vermelho
-            )
-            tela.blit(texto_horario_motivo, (200, y + 25))
-            y += 60
+        if ultimos_5:
+            for i, (nome_reg, dados_reg) in enumerate(ultimos_5):
+                try:
+                    pontos_reg = dados_reg[0]
+                    data_str = dados_reg[1]  # Já está no formato "dd/mm/aaaa"
+                    hora_str = dados_reg[2]  # Já está no formato "hh:mm:ss"
+                    
+                    # Renderiza texto do paciente
+                    texto_paciente = fonteRanking.render(
+                        f"Paciente: {nome_reg} - {pontos_reg} pts - {data_str}", 
+                        True, branco
+                    )
+                    tela.blit(texto_paciente, (tamanho[0]//2 - texto_paciente.get_width()//2, y))
+                    
+                    # Renderiza horário e motivo
+                    texto_horario_motivo = fonteRanking.render(
+                        f"Horário: {hora_str} - Motivo: overdose", 
+                        True, vermelho
+                    )
+                    tela.blit(texto_horario_motivo, (tamanho[0]//2 - texto_horario_motivo.get_width()//2, y + 25))
+                    
+                    y += 60
+                except Exception as e:
+                    print(f"Erro ao exibir registro {i}: {e}")
+        else:
+            texto_sem_registros = fonteRanking.render("Nenhum paciente registrado ainda", True, branco)
+            tela.blit(texto_sem_registros, (tamanho[0]//2 - texto_sem_registros.get_width()//2, y))
         
         # Efeito hover para os botões
         reiniciar_color = azul_claro if 400 <= mouse_pos[0] <= 600 and 500 <= mouse_pos[1] <= 550 else branco
@@ -341,13 +366,13 @@ def dead():
         pygame.draw.rect(tela, reiniciar_color, (400, 500, 200, 50), border_radius=10)
         pygame.draw.rect(tela, azul_claro, (400, 500, 200, 50), 2, border_radius=10)  # Borda
         texto_reiniciar = fontedead.render("Reiniciar", True, preto)
-        tela.blit(texto_reiniciar, (425, 500))
+        tela.blit(texto_reiniciar, (400 + 100 - texto_reiniciar.get_width()//2, 500 + 25 - texto_reiniciar.get_height()//2))
         
         # Botão Sair
         pygame.draw.rect(tela, sair_color, (400, 600, 200, 50), border_radius=10)
         pygame.draw.rect(tela, azul_claro, (400, 600, 200, 50), 2, border_radius=10)  # Borda
         texto_sair = fontedead.render("Sair", True, preto)
-        tela.blit(texto_sair, (465, 600))
+        tela.blit(texto_sair, (400 + 100 - texto_sair.get_width()//2, 600 + 25 - texto_sair.get_height()//2))
         
         pygame.display.update()
         relogio.tick(60)
