@@ -1,297 +1,382 @@
 import pygame
 import random
-import os
 import tkinter as tk
 from tkinter import messagebox
-from recursos.funcoes import inicializarBancoDeDados
-from recursos.funcoes import escreverDados
+from recursos.funcoes import inicializarBancoDeDados, escreverDados
 import json
+import math
+import datetime
+import pyttsx3  # Para síntese de voz (item 20)
+import speech_recognition as sr
 
 pygame.init()
 inicializarBancoDeDados()
-tamanho = (1000,700)
+tamanho = (1000, 700)
+tamanho_boasvindas = (100, 100)
 relogio = pygame.time.Clock()
-tela = pygame.display.set_mode( tamanho ) 
+tela = pygame.display.set_mode(tamanho)
 pygame.display.set_caption("Stay Natural do Cadu")
 icone = pygame.image.load("recursos/imagens/icone.webp")
 pygame.display.set_icon(icone)
-branco = (255,255,255)
-azul_claro = (0,200,255)
-preto = (0, 0 ,0 )
+
+# Cores
+branco = (255, 255, 255)
+azul_claro = (0, 200, 255)
+preto = (0, 0, 0)
+amarelo = (255, 255, 0)
+vermelho = (255,0,0)
+
+#recursos
 natural = pygame.image.load("recursos/imagens/natural.png")
 fundostart = pygame.image.load("recursos/imagens/academiastart.webp")
 fundoJogo = pygame.image.load("recursos/imagens/atgym.jpg")
 fundoDead = pygame.image.load("recursos/imagens/fundohospital.png")
 trembo = pygame.image.load("recursos/imagens/trembo.png")
-seringa = pygame.image.load("recursos/imagens/seringa.png")
+fundorecepcao = pygame.image.load("recursos/imagens/fundorecepcao.jpg")
+ramonrandom = pygame.image.load("recursos/imagens/ramonrandom.png")  # Novo asset (item 14)
+global halter
+halter = pygame.image.load("recursos/imagens/halteresdecora.png")
+global altura_halter 
+global largura_halter
+largura_halter = 130
+altura_halter = 130
+
+#audios
 trembosound = pygame.mixer.Sound("recursos/audios/audiocontra.mp3")
 mortesound = pygame.mixer.Sound("recursos/audios/quandomorre.mp3")
-fonteMenu = pygame.font.SysFont("comicsans",18)
-fonteMorte = pygame.font.SysFont("arial",120)
 pygame.mixer.music.load("recursos/audios/fundogame.mp3")
+#direcoes
+global direcao_animacao
+direcao_animacao = "aumentando"
+global contador_animacao
+contador_animacao = 0
 
+#fontes
+fonteMenu = pygame.font.SysFont("comicsans",18)
+fonterecepcao = pygame.font.SysFont("comicsans", 40)
+fonteMorte = pygame.font.SysFont("arial", 120)
+fonteRanking = pygame.font.SysFont("arial", 24)
+fontevoz = pygame.font.SysFont("comicsans", 20)
+fontedead = pygame.font.SysFont("timesnewroman", 40)
 
-fundostart = pygame.transform.scale(fundostart, (1000, 700)) 
-trembo = pygame.transform.scale(trembo, (140,140)) 
-natural = pygame.transform.scale(natural, (200,200))
-fundoJogo = pygame.transform.scale(fundoJogo, (1000,700))
-fundoDead = pygame.transform.scale(fundoDead, (1000, 700))
-esperando_inicio = True
+#imagens.ok
+fundostart = pygame.transform.scale(fundostart, tamanho)
+trembo = pygame.transform.scale(trembo, (140, 140))
+natural = pygame.transform.scale(natural, (200, 200))
+fundoJogo = pygame.transform.scale(fundoJogo, tamanho)
+fundoDead = pygame.transform.scale(fundoDead, tamanho)
+ramonrandom = pygame.transform.scale(ramonrandom, (150, 100))  # Item 14
+fundorecepcao = pygame.transform.scale(fundorecepcao, (1000,700))
+halter = pygame.transform.scale(halter, (130,130))
+#função telas boas vindas
+def tela_boas_vindas(nome_jogador):
+    esperando_inicio = True
+    recognizer = sr.Recognizer()
+    
+    while esperando_inicio:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            
+            # Tecla V ativa o reconhecimento
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_v:
+                try:
+                    with sr.Microphone() as source:
+                        #microfone captando
+                        tela.fill(preto)
+                        tela.blit(fundorecepcao, (0, 0))
+                        tela.blit(fonterecepcao.render("Ouvindo... diga 'INICIAR'", True, vermelho), (300, 550))
+                        pygame.display.update()
+                        
+                        recognizer.adjust_for_ambient_noise(source)
+                        audio = recognizer.listen(source, timeout=3)
+                        comando = recognizer.recognize_google(audio, language="pt-BR").lower()
+                        
+                        if "iniciar" in comando:
+                            esperando_inicio = False
+                except Exception as e:
+                    print(f"Erro no reconhecimento: {e}")
+            
+            
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                if botao_iniciar.collidepoint(evento.pos):
+                    esperando_inicio = False
+
+        
+        tela.fill(preto)
+        tela.blit(fundorecepcao, (0, 0))
+        
+        #escritas da tela boa vinda
+        texto_boas_vindas = fonterecepcao.render(f"Bem-vindo, {nome_jogador}!", True, branco)
+        texto_instrucao = fonterecepcao.render("Use as setas do eixo X para evitar as Trembolonas!", True, branco)
+        tela.blit(texto_boas_vindas, (20, 20))
+        tela.blit(texto_instrucao, (20, 500))
+
+        #clica no iniciar
+        pygame.draw.rect(tela, branco, (395, 595, 210, 60), 2, border_radius=12)
+        botao_iniciar = pygame.draw.rect(tela, azul_claro, (400, 600, 200, 50), border_radius=10)
+        texto_botao = fonterecepcao.render("INICIAR", True, preto)
+        tela.blit(texto_botao, (410, 600))
+        
+        #intrução para falar
+        texto_voz = fontevoz.render("Pressione V e fale 'INICIAR'", True, branco)
+        tela.blit(texto_voz, (700, 20))
+        
+        pygame.display.update()
+        relogio.tick(60)
+
+#função Jogar
 def jogar():
-    largura_janela = 300
-    altura_janela = 50
     def obter_nome():
         global nome
-        nome = entry_nome.get()  # Obtém o texto digitado
-        if not nome:  # Se o campo estiver vazio
-            messagebox.showwarning("Aviso", "Por favor, digite seu nome!")  # Exibe uma mensagem de aviso
+        nome = entry_nome.get()
+        if not nome:
+            messagebox.showwarning("Aviso", "Por favor, digite seu nome!")
         else:
-            #print(f'Nome digitado: {nome}')  # Exibe o nome no console
-            root.destroy()  # Fecha a janela após a entrada válida
-    # Criação da janela principal
+            root.destroy()
+
     root = tk.Tk()
-    # Obter as dimensões da tela
-    largura_tela = root.winfo_screenwidth()
-    altura_tela = root.winfo_screenheight()
-    pos_x = (largura_tela - largura_janela) // 2
-    pos_y = (altura_tela - altura_janela) // 2
-    root.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
     root.title("Informe seu nickname")
-    root.protocol("WM_DELETE_WINDOW", obter_nome)
-
-    # Entry (campo de texto)
-    entry_nome = tk.Entry(root)
-    entry_nome.pack()
-
-    # Botão para pegar o nome
-    botao = tk.Button(root, text="Enviar", command=obter_nome)
-    botao.pack()
-
-    # Inicia o loop da interface gráfica
-    root.mainloop()
     
+    largura_janela = 450
+    altura_janela = 100 
+    
+    
+    largura_tela = root.winfo_screenmmwidth()  #largura da tela = 1000
+    altura_tela = root.winfo_screenheight()  #altura da tela = 700
 
+    
+    pos_x = (largura_tela //2 + largura_janela ) 
+    pos_y = (altura_tela //2 - altura_janela ) 
+    root.geometry(f"{largura_janela}x{altura_janela}+{pos_x}+{pos_y}")
+    root.resizable(False, False)  
+    
+   
+    tk.Label(root, text="Digite seu nome:").pack(pady=5)
+    entry_nome = tk.Entry(root)
+    entry_nome.pack(pady=5)
+    
+    
+    tk.Button(root, text="Enviar", command=obter_nome).pack(pady=5)
+    
+    root.mainloop()
+
+    tela_boas_vindas(nome)  
+
+    #variaveis
     posicaoXPersona = 500
     posicaoYPersona = 400
-    movimentoXPersona  = 0
-    movimentoYPersona  = 0
-    posicaoXtrembo = 400
-    posicaoYtrembo = -240
+    movimentoXPersona = 0
+    posicaoXtrembo = random.randint(0, 800)
+    posicaoYtrembo = -140
     velocidadetrembo = 1
-    pygame.mixer.Sound.play(trembosound)
-    pygame.mixer.music.play(-1)
     pontos = 0
-    larguraPersona = 200
-    alturaPersona = 200
-    larguratrembo  = 140
-    alturatrembo  = 140
-    dificuldade  = 30
+    pausado = False  # Item 11
+
+    
+    posicao_ramonrandom = [random.randint(0, 1000), random.randint(0, 700)]
+    velocidade_ramonrandom = random.uniform(0.5, 1.5)
+
+    pygame.mixer.music.play(-1)
+
     while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
+                pygame.quit()
                 quit()
-            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_RIGHT:
-                movimentoXPersona = 15
-            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_LEFT:
-                movimentoXPersona = -15
-            elif evento.type == pygame.KEYUP and evento.key == pygame.K_RIGHT:
-                movimentoXPersona = 0
-            elif evento.type == pygame.KEYUP and evento.key == pygame.K_LEFT:
-                movimentoXPersona = 0
-                
-        posicaoXPersona = posicaoXPersona + movimentoXPersona                    
+            elif evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_RIGHT:
+                    movimentoXPersona = 15
+                elif evento.key == pygame.K_LEFT:
+                    movimentoXPersona = -15
+                elif evento.key == pygame.K_SPACE:  # Item 11
+                    pausado = not pausado
+            elif evento.type == pygame.KEYUP:
+                if evento.key in (pygame.K_RIGHT, pygame.K_LEFT):
+                    movimentoXPersona = 0
+        #pausado
+        if pausado:  
+            texto_pause = fonteMorte.render("PAUSE", True, branco)
+            tela.blit(texto_pause, (350, 250))
+            pygame.display.update()
+            continue
+
         
-        if posicaoXPersona < 0 :
-            posicaoXPersona = 0
-        elif posicaoXPersona >800:
-            posicaoXPersona = 800
+        posicaoXPersona += movimentoXPersona
+        posicaoXPersona = max(0, min(800, posicaoXPersona))
         
-            
-        tela.fill(branco)
-        tela.blit(fundoJogo, (0,0) )
-        #pygame.draw.circle(tela, preto, (posicaoXPersona,posicaoYPersona), 40, 0 )
-        tela.blit( natural, (posicaoXPersona, posicaoYPersona) )
-        
-        posicaoYtrembo = posicaoYtrembo + velocidadetrembo
+        posicaoYtrembo += velocidadetrembo
         if posicaoYtrembo > 700:
             posicaoYtrembo = -140
-            pontos = pontos + 1
-            velocidadetrembo = velocidadetrembo + 1
-            posicaoXtrembo = random.randint(0,1000)
             pygame.mixer.Sound.play(trembosound)
-            
-            
-        tela.blit( trembo, (posicaoXtrembo, posicaoYtrembo) )
+            pontos += 1
+            velocidadetrembo += 0.5
+            posicaoXtrembo = random.randint(0, 800)
+
         
-        texto = fonteMenu.render("Pontos: "+str(pontos), True, branco)
-        tela.blit(texto, (15,15))
+        posicao_ramonrandom[0] -= velocidade_ramonrandom
+        if posicao_ramonrandom[0] < -150:
+            posicao_ramonrandom[0] = 1000
+            posicao_ramonrandom[1] = random.randint(50, 200)
+
         
-        pixelsPersonaX = list(range(posicaoXPersona, posicaoXPersona+larguraPersona))
-        pixelsPersonaY = list(range(posicaoYPersona, posicaoYPersona+alturaPersona))
-        pixelstremboX = list(range(posicaoXtrembo, posicaoXtrembo + larguratrembo))
-        pixelstremboY = list(range(posicaoYtrembo, posicaoYtrembo + alturatrembo))
-        
-        os.system("cls")
-        # print( len( list( set(pixelstremboX).intersection(set(pixelsPersonaX))   ) )   )
-        if  len( list( set(pixelstremboY).intersection(set(pixelsPersonaY))) ) > dificuldade:
-            if len( list( set(pixelstremboX).intersection(set(pixelsPersonaX))   ) )  > dificuldade:
-                escreverDados(nome, pontos)
-                dead()
-                
+        tela.blit(fundoJogo, (0, 0))
+        global altura_halter
+        global largura_halter
+        def animar():
+            global direcao_animacao
+            global contador_animacao
+            if direcao_animacao == 'aumentando':
+                if contador_animacao < 100:
+                    contador_animacao += 1
+                else:
+                    direcao_animacao = 'diminuindo'
             else:
-                print("Ainda Vivo, mas por pouco!")
-        else:
-            print("Ainda Vivo")
+                if contador_animacao > 0:
+                    contador_animacao -= 1
+                else:
+                    direcao_animacao = 'aumentando'
+
+            escala = 1 + contador_animacao * 0.00115
+            return escala
+        escala = animar()
+        nova_largura = int(largura_halter * escala)
+        nova_altura = int(altura_halter * escala)
+    
         
+        image = pygame.transform.smoothscale(halter, (nova_largura,nova_altura))
+        tela.blit(image,(820,20))
+        
+
+        tela.blit(ramonrandom, posicao_ramonrandom)  
+        tela.blit(natural, (posicaoXPersona, posicaoYPersona))
+        tela.blit(trembo, (posicaoXtrembo, posicaoYtrembo))
+        
+        
+        texto_pontos = fonteMenu.render(f"Pontos: {pontos}", True, branco)
+        texto_pause_info = fonteMenu.render("Press SPACE to Pause", True, branco)
+        tela.blit(texto_pontos, (15, 15))
+        tela.blit(texto_pause_info, (20, 660))
+
+        #colisão
+        if (abs(posicaoXPersona - posicaoXtrembo) < 124 and 
+            abs(posicaoYPersona - posicaoYtrembo) < 124):
+            data_hora = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            escreverDados(nome, pontos)  
+            dead()
+
         pygame.display.update()
         relogio.tick(120)
 
-
-def start():
-    larguraButtonStart = 165
-    alturaButtonStart  = 40
-    larguraButtonQuit = 165
-    alturaButtonQuit  = 40
-    
-
-    while True:
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
-                quit()
-            elif evento.type == pygame.MOUSEBUTTONDOWN:
-                if startButton.collidepoint(evento.pos):
-                    larguraButtonStart = 165
-                    alturaButtonStart  = 35
-                if quitButton.collidepoint(evento.pos):
-                    larguraButtonQuit = 165
-                    alturaButtonQuit  = 35
-
-                
-            elif evento.type == pygame.MOUSEBUTTONUP:
-                # Verifica se o clique foi dentro do retângulo
-                if startButton.collidepoint(evento.pos):
-                    #pygame.mixer.music.play(-1)
-                    larguraButtonStart = 165
-                    alturaButtonStart  = 40
-                    jogar()
-                if quitButton.collidepoint(evento.pos):
-                    #pygame.mixer.music.play(-1)
-                    larguraButtonQuit = 165
-                    alturaButtonQuit  = 40
-                    quit()
-                    
-            
-            
-        tela.fill(branco)
-        tela.blit(fundostart, (0,0) )
-
-        startButton = pygame.draw.rect(tela, azul_claro, (10,10, larguraButtonStart, alturaButtonStart), border_radius=15)
-        startTexto = fonteMenu.render("Matricular-se", True, preto)
-        tela.blit(startTexto, (25,12))
-        
-        quitButton = pygame.draw.rect(tela, azul_claro, (10,60, larguraButtonQuit, alturaButtonQuit), border_radius=15)
-        quitTexto = fonteMenu.render("Continuar Frango", True, preto)
-        tela.blit(quitTexto, (25,62))
-        
-        pygame.display.update()
-        relogio.tick(60)
-
-
+#função morte
 def dead():
     pygame.mixer.music.stop()
     pygame.mixer.Sound.play(mortesound)
-    larguraButtonStart = 165
-    alturaButtonStart  = 40
-    larguraButtonQuit = 165
-    alturaButtonQuit  = 40
-    
-    
-    root = tk.Tk()
-    root.title("Tela da Morte")
 
-    # Adiciona um título na tela
-    label = tk.Label(root, text="Log das Partidas", font=("Arial", 16))
-    label.pack(pady=10)
+    # Carrega os últimos 5 registros
+    try:
+        with open("log.dat", "r") as f:
+            registros = json.load(f)
+        ultimos_5 = sorted(registros.items(), key=lambda x: x[1][0], reverse=True)[:5]
+    except:
+        ultimos_5 = []
 
-    # Criação do Listbox para mostrar o log
-    listbox = tk.Listbox(root, width=50, height=10, selectmode=tk.SINGLE)
-    listbox.pack(pady=20)
+    esperando = True
+    while esperando:
+        mouse_pos = pygame.mouse.get_pos()
+        
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                # Verifica clique nos botões
+                if 400 <= mouse_pos[0] <= 600 and 500 <= mouse_pos[1] <= 550:  # Botão Reiniciar
+                    esperando = False
+                    pygame.mixer.music.play(-1)
+                    jogar()
+                    return
+                
+                elif 400 <= mouse_pos[0] <= 600 and 600 <= mouse_pos[1] <= 650:  # Botão Sair
+                    pygame.quit()
+                    quit()
 
-    # Adiciona o log das partidas no Listbox
-    log_partidas = open("base.cadu", "r").read()
-    log_partidas = json.loads(log_partidas)
-    for chave in log_partidas:
-        listbox.insert(tk.END, f"Pontos: {log_partidas[chave][0]} na data: {log_partidas[chave][1]} - Nickname: {chave}")  # Adiciona cada linha no Listbox
-    
-    root.mainloop()
+        tela.blit(fundoDead, (0, 0))
+        
+        # Título GAME OVER
+        texto_morte = fonteMorte.render("GAME OVER", True, (255, 0, 0))
+        tela.blit(texto_morte, (200, 30))
+        
+        # Subtítulo "Últimos Pacientes"
+        texto_subtitulo = fontedead.render("Últimos Pacientes:", True, branco)
+        tela.blit(texto_subtitulo, (200, 150))
+        
+        # Lista de pacientes
+        y = 200
+        for i, (nome_reg, (pontos_reg, data_reg)) in enumerate(ultimos_5):
+            data_obj = datetime.datetime.strptime(data_reg, "%d/%m/%Y %H:%M:%S")
+            data_formatada = data_obj.strftime("%d/%m/%Y")
+            hora_formatada = data_obj.strftime("%H:%M:%S")
+            
+            texto_paciente = fonteRanking.render(
+                f"Paciente: {nome_reg} - {pontos_reg} pts - {data_formatada}", 
+                True, branco
+            )
+            tela.blit(texto_paciente, (200, y))
+            
+            texto_horario_motivo = fonteRanking.render(
+                f"Horário: {hora_formatada} - Motivo: overdose", 
+                True, vermelho
+            )
+            tela.blit(texto_horario_motivo, (200, y + 25))
+            y += 60
+        
+        # Efeito hover para os botões
+        reiniciar_color = azul_claro if 400 <= mouse_pos[0] <= 600 and 500 <= mouse_pos[1] <= 550 else branco
+        sair_color = azul_claro if 400 <= mouse_pos[0] <= 600 and 600 <= mouse_pos[1] <= 650 else branco
+
+        # Botão Reiniciar
+        pygame.draw.rect(tela, reiniciar_color, (400, 500, 200, 50), border_radius=10)
+        pygame.draw.rect(tela, azul_claro, (400, 500, 200, 50), 2, border_radius=10)  # Borda
+        texto_reiniciar = fontedead.render("Reiniciar", True, preto)
+        tela.blit(texto_reiniciar, (425, 500))
+        
+        # Botão Sair
+        pygame.draw.rect(tela, sair_color, (400, 600, 200, 50), border_radius=10)
+        pygame.draw.rect(tela, azul_claro, (400, 600, 200, 50), 2, border_radius=10)  # Borda
+        texto_sair = fontedead.render("Sair", True, preto)
+        tela.blit(texto_sair, (465, 600))
+        
+        pygame.display.update()
+        relogio.tick(60)
+#função jogar 
+def start():
     while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
+                pygame.quit()
                 quit()
             elif evento.type == pygame.MOUSEBUTTONDOWN:
                 if startButton.collidepoint(evento.pos):
-                    larguraButtonStart = 140
-                    alturaButtonStart  = 35
-                if quitButton.collidepoint(evento.pos):
-                    larguraButtonQuit = 140
-                    alturaButtonQuit  = 35
-
-                
-            elif evento.type == pygame.MOUSEBUTTONUP:
-                # Verifica se o clique foi dentro do retângulo
-                if startButton.collidepoint(evento.pos):
-                    #pygame.mixer.music.play(-1)
-                    larguraButtonStart = 150
-                    alturaButtonStart  = 40
                     jogar()
-                if quitButton.collidepoint(evento.pos):
-                    #pygame.mixer.music.play(-1)
-                    larguraButtonQuit = 150
-                    alturaButtonQuit  = 40
+                elif quitButton.collidepoint(evento.pos):
+                    pygame.quit()
                     quit()
-                    
-        
-            
-            
-        tela.fill(branco)
-        tela.blit(fundoDead, (0,0) )
 
+        tela.blit(fundostart, (0, 0))
         
-        startButton = pygame.draw.rect(tela, branco, (10,10, larguraButtonStart, alturaButtonStart), border_radius=15)
-        startTexto = fonteMenu.render("Iniciar Game", True, preto)
-        tela.blit(startTexto, (25,12))
+        startButton = pygame.draw.rect(tela, azul_claro, (10, 10, 165, 40), border_radius=15)
+        startTexto = fonteMenu.render("Matricular-se", True, preto)
+        tela.blit(startTexto, (25, 12))
         
-        quitButton = pygame.draw.rect(tela, branco, (10,60, larguraButtonQuit, alturaButtonQuit), border_radius=15)
-        quitTexto = fonteMenu.render("Sair do Game", True, preto)
-        tela.blit(quitTexto, (25,62))
-
-
+        quitButton = pygame.draw.rect(tela, azul_claro, (10, 60, 165, 40), border_radius=15)
+        quitTexto = fonteMenu.render("Continuar Frango", True, preto)
+        tela.blit(quitTexto, (25, 62))
+        
         pygame.display.update()
         relogio.tick(60)
-def tela_boas_vindas(nome):
-            esperando_inicio = True
-            while esperando_inicio:
-                for evento in pygame.event.get():
-                    if evento.type == pygame.QUIT:
-                        pygame.quit()
-                        quit()
-                    if evento.type == pygame.MOUSEBUTTONDOWN:
-                        if botao_iniciar.collidepoint(evento.pos):
-                            esperando_inicio = False
+        
 
-                tela.fill(preto)
-                tela.blit(fundostart, (0, 0))  # Ou um fundo específico para essa tela
-                
-                # Mensagem de boas-vindas
-                texto_boas_vindas = fonteMenu.render(f"Bem-vindo, {nome}!", True, branco)
-                texto_instrucao = fonteMenu.render("Evite as trembolonas usando as setas!", True, branco)
-                tela.blit(texto_boas_vindas, (300, 200))
-                tela.blit(texto_instrucao, (250, 250))
-                
-                # Botão "Iniciar"
-                botao_iniciar = pygame.draw.rect(tela, azul_claro, (400, 350, 200, 50), border_radius=10)
-                texto_botao = fonteMenu.render("INICIAR", True, preto)
-                tela.blit(texto_botao, (460, 360))
-                pygame.display.update()
-                relogio.tick(60)
 start()

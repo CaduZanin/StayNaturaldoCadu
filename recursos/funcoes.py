@@ -17,7 +17,7 @@ def inicializarBancoDeDados():
         print("Banco de Dados Inexistente. Criando...")
         banco = open("base.cadu","w")
     
-def escreverDados(nome, pontos, data_br):
+def escreverDados(nome, pontos):
     # INI - inserindo no arquivo
     banco = open("base.cadu","r")
     dados = banco.read()
@@ -29,7 +29,9 @@ def escreverDados(nome, pontos, data_br):
         dadosDict = {}
         
     data_br = datetime.now().strftime("%d/%m/%Y")
-    dadosDict[nome] = (pontos, data_br)
+    hora_br = datetime.now().strftime("%H:%M:%S")
+    dadosDict[nome] = (pontos, data_br, hora_br)
+
     
     banco = open("base.cadu","w")
     banco.write(json.dumps(dadosDict))
