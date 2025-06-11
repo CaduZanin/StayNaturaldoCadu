@@ -11,7 +11,7 @@ import speech_recognition as sr
 
 pygame.init()
 inicializarBancoDeDados()
-#isso daqui é de propósito que esta aqui
+#isso daqui é de propósito que esta aqui, 
 tamanho = (1000, 700)
 tamanho_boasvindas = (100, 100)
 relogio = pygame.time.Clock()
@@ -83,6 +83,7 @@ def tela_boas_vindas(nome_jogador):
             if evento.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+               
             
             # Tecla V ativa o reconhecimento
             if evento.type == pygame.KEYDOWN and evento.key == pygame.K_v:
