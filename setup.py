@@ -1,14 +1,14 @@
-import cx_Freeze
-executaveis = [ 
-               cx_Freeze.Executable(script="main.py", icon="recursos/icone.webp") ]
-cx_Freeze.setup(
-    name = "Stay Natural",
-    options={
-        "build_exe":{
-            "packages":["pygame"],
-            "include_files":["recursos"]
-        }
-    }, executables = executaveis
+from cx_Freeze import setup, Executable
+
+build_options = {
+    "packages": ["pygame", "speech_recognition", "pyttsx3", "tkinter"],
+    "include_files": ["recursos/"]  # Pasta com assets
+}
+
+setup(
+    name="StayNatural",
+    version="1.0",
+    description="Jogo do Iron Man adaptado",
+    options={"build_exe": build_options},
+    executables=[Executable("main.py", base="Win32GUI")]  # Substitua "main.py" pelo nome do seu arquivo principal
 )
-
-
