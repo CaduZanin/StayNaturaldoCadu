@@ -11,6 +11,7 @@ import speech_recognition as sr
 
 pygame.init()
 inicializarBancoDeDados()
+teste = 0
 tamanho = (1000, 700)
 tamanho_boasvindas = (100, 100)
 relogio = pygame.time.Clock()
