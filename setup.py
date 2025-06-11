@@ -1,6 +1,6 @@
 import cx_Freeze
 executaveis = [ 
-               cx_Freeze.Executable(script="main.py", icon="recursos/imagens/icone.webp") ]
+               cx_Freeze.Executable(script="main.py", icon="recursos/imagens/icone.ico") ]
 cx_Freeze.setup(
     name = "Stay Natural",
     options={
