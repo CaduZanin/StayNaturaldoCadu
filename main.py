@@ -288,7 +288,7 @@ def dead():
 
     # Carrega os últimos 5 registros
     try:
-        with open("log.dat", "r") as f:
+        with open("recursos/log.dat", "r") as f:
             registros = json.load(f)
         # Converte para lista e ordena por pontos (decrescente)
         registros_lista = sorted(registros.items(), key=lambda item: item[1][0], reverse=True)

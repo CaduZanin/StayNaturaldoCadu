@@ -12,14 +12,14 @@ def aguarde(segundos):
 def inicializarBancoDeDados():
     # r - read, w - write, a - append
     try:
-        banco = open("log.dat","r")
+        banco = open("recursos/log.dat","r")
     except:
         print("Banco de Dados Inexistente. Criando...")
-        banco = open("log.dat","w")
+        banco = open("recursos/log.dat","w")
     
 def escreverDados(nome, pontos):
     # INI - inserindo no arquivo
-    banco = open("log.dat","r")
+    banco = open("recursos/log.dat","r")
     dados = banco.read()
     banco.close()
     print("dados",type(dados))
@@ -33,7 +33,7 @@ def escreverDados(nome, pontos):
     dadosDict[nome] = (pontos, data_br, hora_br)
 
     
-    banco = open("log.dat","w")
+    banco = open("recursos/log.dat","w")
     banco.write(json.dumps(dadosDict))
     banco.close()
     
